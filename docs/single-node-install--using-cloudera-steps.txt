@@ -180,6 +180,6 @@ hadoop dfs -cat gutenberg-output/part-r-00000
 
 Step 12 : Monitoring UI's
 
-http://localhost:50030/ – web UI for MapReduce job tracker(s)
-http://localhost:50060/ – web UI for task tracker(s)
-http://localhost:50070/ – web UI for HDFS name node(s)
+http://localhost:50030/ web UI for MapReduce job tracker(s)
+http://localhost:50060/ web UI for task tracker(s)
+http://localhost:50070/ web UI for HDFS name node(s)
