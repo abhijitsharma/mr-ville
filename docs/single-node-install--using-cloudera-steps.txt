@@ -1,7 +1,6 @@
 Step 1 : Get software
-Get the following (from internet or my machine \\absharma-lt-01\downloads):
 
-Ubuntu Lucid Linux 10.04 LTS ISO - lets call the machine 'ubuntu'
+Get Ubuntu Lucid Linux 10.04 LTS ISO from the internet - lets call the machine 'ubuntu'
 Make sure the username you specify during ubuntu installation is NOT hadoop say guest
 
 Step 2 : Install Java 6
