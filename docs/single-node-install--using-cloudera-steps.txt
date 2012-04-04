@@ -1,0 +1,186 @@
+Step 1 : Get software
+Get the following (from internet or my machine \\absharma-lt-01\downloads):
+
+Ubuntu Lucid Linux 10.04 LTS ISO - lets call the machine 'ubuntu'
+Make sure the username you specify during ubuntu installation is NOT hadoop say guest
+
+Step 2 : Install Java 6
+
+cd ~/
+wget https://raw.github.com/flexiondotorg/oab-java6/master/oab-java6.sh -O oab-java6.sh
+chmod +x oab-java6.sh
+sudo ./oab-java6.sh
+sudo apt-get install sun-java6-jdk
+ 
+If you have a problem of broken dependencies with installing the java package some hints on how to solve the problem are given at:
+https://github.com/flexiondotorg/oab-java6Install Oracle Java on ubuntu
+
+Step 3 : Create user hadoop
+
+sudo addgroup hadoop
+sudo adduser --ingroup hadoop hadoop
+
+Also add hadoop to sudoers (Use visudo) sudo visudo and add the line
+%hadoop ALL=(ALL) ALL
+
+Step 4 : Enable ssh
+Do either of the following:
+
+Enable sshd - through Synaptic Package manager
+sudo apt-get install ssh
+
+Step 5 : Enable password less SSH access to your local machine
+sudo su - hadoop
+ssh-keygen -t rsa -P ""
+cat $HOME/.ssh/id_rsa.pub >> $HOME/.ssh/authorized_keys
+ssh localhost
+This should login successfully without prompting for password.
+
+Step 6 : Disable IPv6
+Open /etc/sysctl.conf and add the following lines to the end of the file:
+
+#disable ipv6
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+You have to reboot your machine in order to make the changes take effect. You can check whether IPv6 is enabled on your machine with the following command:cat /proc/sys/net/ipv6/conf/all/disable_ipv6
+
+A return value of 0 means IPv6 is enabled, a value of 1 means disabled
+
+Step 7: Install Cloudera Hadoop
+From this site (https://ccp.cloudera.com/display/CDHDOC/CDH3+Installation). Follow the instructions for Ubuntu/Debian systems - install using download and install option.
+
+Summarized here:
+
+Create a new file /etc/apt/sources.list.d/cloudera.list with the following contents: 
+
+deb http://archive.cloudera.com/debian <RELEASE>-cdh3 contrib
+deb-src http://archive.cloudera.com/debian <RELEASE>-cdh3 contrib
+
+sudo apt-get install curl
+curl -s http://archive.cloudera.com/debian/archive.key | sudo apt-key add -
+
+sudo apt-get update
+
+apt-cache search hadoop
+sudo apt-get install hadoop-0.20
+
+sudo apt-get install hadoop-0.20-namenode
+sudo apt-get install hadoop-0.20-datanode
+sudo apt-get install hadoop-0.20-secondarynamenode
+sudo apt-get install hadoop-0.20-jobtracker
+sudo apt-get install hadoop-0.20-tasktracker
+
+Also add bin directory to PATH in .bashrc:
+
+PATH=${PATH}:/usr/lib/hadoop/bin
+export PATH
+Important:  Change the owner and group of the installed hadoop directories to hadoop:hadoop
+
+cd /usr/lib
+sudo chown -R hadoop:hadoop hadoop
+sudo chown -R hadoop:hadoop hadoop-0.20
+
+Step 8 : Configuration
+Change directory to /usr/lib/hadoop/
+
+conf/hadoop-env.sh: set JAVA_HOME correctly by uncommenting the line and specifying correct java directory:
+export JAVA_HOME=/usr/lib/jvm/java-6-sun
+
+conf/core-site.xml:
+
+<property>
+  <name>hadoop.tmp.dir</name>
+  <value>/usr/lib/hadoop/tmp</value>
+  <description>A base for other temporary directories.</description>
+</property>
+ 
+<property>
+  <name>fs.default.name</name>
+  <value>hdfs://ubuntu:54310</value>
+  <description>The name of the default file system.  A URI whose
+  scheme and authority determine the FileSystem implementation.  The
+  uri's scheme determines the config property (fs.SCHEME.impl) naming
+  the FileSystem implementation class.  The uri's authority is used to
+  determine the host, port, etc. for a filesystem.</description>
+</property>
+
+conf/mapred-site.xml:
+
+<property>
+  <name>mapred.job.tracker</name>
+  <value>ubuntu:54311</value>
+  <description>The host and port that the MapReduce job tracker runs
+  at.  If "local", then jobs are run in-process as a single map
+  and reduce task.
+  </description>
+</property>
+
+conf/hdfs-site.xml:
+
+<property>
+  <name>dfs.replication</name>
+  <value>1</value>
+  <description>Default block replication.
+  The actual number of replications can be specified when the file is created.
+  The default is used if replication is not specified in create time.
+  </description>
+</property>
+
+Step 9 : Formatting the name node
+
+The first step to starting up your Hadoop installation is formatting the Hadoop filesystem which is implemented on top of the local filesystem - do this the first time you set up a Hadoop cluster. Make sure all hadoop servers are stopped by using stop-all.sh
+
+hadoop namenode -format
+Now we need to ensure correct permissions for the directories created after format.
+
+sudo chown -R hdfs:hdfs /usr/lib/hadoop/tmp/dfs (else namenode will not start)
+Also /usr/lib/hadoop/tmp should be 777
+hadoop dfs -chmod -R 777 / (else jobtracker will not start) - for this you require data and name nodes to be running - also may have to copy over a dummy file to initialize hdfs for these perms settings
+
+
+Step 10 : Starting all daemons
+Use start-all.sh - It will start all the following daemons:
+
+MR Related :
+
+TaskTracker
+JobTracker
+
+DFS Related :
+
+DataNode
+SecondaryNameNode
+NameNode
+
+To check this you can use the following commands:
+
+jps
+sudo netstat -plten | grep java
+Use stop-all.sh to stop all daemons.
+
+Important: start-all.sh and stop-all.sh might bungle up permissions for log files and hence may not start the daemons correctly.  A better way is to run start and stop on the init.d services:
+
+ls /etc/init.d/hadoop-0.20-* | while read hservice;do sudo $hservice start; done (for starting daemons)
+ls /etc/init.d/hadoop-0.20-* | while read hservice;do sudo $hservice start; done (for stopping daemons)
+
+Step 11 : Testing an example
+We will test out the word count example. Copy some text files to /tmp/gutenberg
+
+Copy files to HDFS
+hadoop dfs -copyFromLocal /tmp/gutenberg gutenberg
+
+Check files in HDFS
+hadoop dfs -ls
+
+Run the Word Count example job.
+hadoop jar hadoop-0.20.2-examples.jar wordcount gutenberg gutenberg-output
+
+Results
+hadoop dfs -cat gutenberg-output/part-r-00000
+
+Step 12 : Monitoring UI's
+
+http://localhost:50030/ – web UI for MapReduce job tracker(s)
+http://localhost:50060/ – web UI for task tracker(s)
+http://localhost:50070/ – web UI for HDFS name node(s)
