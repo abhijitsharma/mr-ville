@@ -1,1 +1,13 @@
 A playground for coding up MR algorithms for interesting problems.
+
+
+mvn clean install
+
+Unit Tests
+mvn test
+
+System Integration Tests (Using local FS and mini MR)
+
+mvn -DargLine="-Dhadoop.log.dir=/tmp" verify
+
+System Integration Tests (Using distributed Hadoop)
