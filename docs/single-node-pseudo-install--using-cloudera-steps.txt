@@ -1,0 +1,80 @@
+Step 1 : Get software
+
+Get Ubuntu Lucid Linux 10.04 LTS ISO from the internet - lets call the machine 'ubuntu'
+Make sure the username you specify during ubuntu installation is NOT hadoop say guest
+
+Step 2 : Install Java 6
+
+cd ~/
+wget https://raw.github.com/flexiondotorg/oab-java6/master/oab-java.sh -O oab-java6.sh
+chmod +x oab-java6.sh
+sudo ./oab-java6.sh
+sudo apt-get install sun-java6-jdk
+ 
+If you have a problem of broken dependencies with installing the java package some hints on how to solve the problem are given at:
+https://github.com/flexiondotorg/oab-java6Install Oracle Java on ubuntu
+
+Step 7: Install Cloudera Hadoop
+From this site (https://ccp.cloudera.com/display/CDHDOC/CDH3+Installation). Follow the instructions for Ubuntu/Debian systems - install using download and install option.
+
+Summarized here:
+
+Create a new file /etc/apt/sources.list.d/cloudera.list with the following contents: 
+
+deb http://archive.cloudera.com/debian <RELEASE>-cdh3u3 contrib
+deb-src http://archive.cloudera.com/debian <RELEASE>-cdh3u3 contrib
+
+sudo apt-get install curl
+curl -s http://archive.cloudera.com/debian/archive.key | sudo apt-key add -
+
+sudo apt-get update
+
+apt-cache search hadoop
+sudo apt-get install hadoop-0.20
+sudo apt-get install hadoop-0.20-conf-pseudo
+
+Also add bin directory to PATH in .bashrc:
+
+PATH=${PATH}:/usr/lib/hadoop/bin
+export PATH
+
+MR Related :
+
+TaskTracker
+JobTracker
+
+DFS Related :
+
+DataNode
+SecondaryNameNode
+NameNode
+
+To check this you can use the following commands:
+
+sudo jps
+sudo netstat -plten | grep java
+
+
+ls /etc/init.d/hadoop-0.20-* | while read hservice;do sudo $hservice start; done (for starting daemons)
+ls /etc/init.d/hadoop-0.20-* | while read hservice;do sudo $hservice start; done (for stopping daemons)
+
+Step 11 : Testing an example
+We will test out the word count example. Copy some text files to /tmp/gutenberg
+
+Copy files to HDFS
+hadoop dfs -copyFromLocal /tmp/gutenberg gutenberg
+
+Check files in HDFS
+hadoop dfs -ls
+
+Run the Word Count example job.
+hadoop jar hadoop-0.20.2-examples.jar wordcount gutenberg gutenberg-output
+
+Results
+hadoop dfs -cat gutenberg-output/part-r-00000
+
+Step 12 : Monitoring UI's
+
+http://localhost:50030/ web UI for MapReduce job tracker(s)
+http://localhost:50060/ web UI for task tracker(s)
+http://localhost:50070/ web UI for HDFS name node(s)
